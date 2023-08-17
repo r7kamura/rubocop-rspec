@@ -28,6 +28,11 @@ module RuboCop
 
         MSG = 'Excessive whitespace.'
 
+        LEADING_WHITESPACE_PATTERN = /\A[[:blank:]]+/.freeze
+        TRAILING_WHITESPACE_PATTERN = /[[:blank:]]+\z/.freeze
+        CONSECUTIVE_WHITESPACES_PATTERN =
+          /([^[[:space:]]])([[:blank:]]{2,})([^[[:blank:]]])/.freeze
+
         # @!method example_description(node)
         def_node_matcher :example_description, <<-PATTERN
           (send _ {#Examples.all #ExampleGroups.all} ${
@@ -52,21 +57,27 @@ module RuboCop
 
         # @param text [String]
         def excessive_whitespace?(text)
-          text.match?(/
-            # Leading space
-            \A[[:blank:]]
-            |
-            # Trailing space
-            [[:blank:]]\z
-            |
-            # Two or more consecutive spaces, except if they are leading spaces
-            [^[[:space:]]][[:blank:]]{2,}[^[[:blank:]]]
-          /x)
+          [
+            LEADING_WHITESPACE_PATTERN,
+            TRAILING_WHITESPACE_PATTERN,
+            CONSECUTIVE_WHITESPACES_PATTERN
+          ].any? do |pattern|
+            text.match?(pattern)
+          end
         end
 
         # @param text [String]
         def strip_excessive_whitespace(text)
-          text.strip.gsub(/[[:blank:]]{2,}/, ' ')
+          text
+            .gsub(LEADING_WHITESPACE_PATTERN, '')
+            .gsub(TRAILING_WHITESPACE_PATTERN, '')
+            .gsub(CONSECUTIVE_WHITESPACES_PATTERN) do
+              [
+                Regexp.last_match(1),
+                Regexp.last_match(2).chars.first,
+                Regexp.last_match(3)
+              ].join
+            end
         end
 
         # @param node [RuboCop::AST::Node]
