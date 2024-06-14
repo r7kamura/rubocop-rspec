@@ -12,6 +12,16 @@ RSpec.describe RuboCop::Cop::RSpec::LetSetup do
         end
       end
     RUBY
+
+    expect_correction(<<~RUBY)
+      describe Foo do
+        before { bar }
+
+        it 'does not use foo' do
+          expect(baz).to eq(qux)
+        end
+      end
+    RUBY
   end
 
   it 'ignores let! when used in `before`' do

@@ -26,6 +26,8 @@ module RuboCop
       #     expect(Widget.count).to eq(1)
       #   end
       class LetSetup < Base
+        extend AutoCorrector
+
         MSG = 'Do not use `let!` to setup objects not referenced in tests.'
 
         # @!method example_or_shared_group_or_including?(node)
@@ -51,7 +53,10 @@ module RuboCop
           return unless example_or_shared_group_or_including?(node)
 
           unused_let_bang(node) do |let|
-            add_offense(let)
+            add_offense(let) do |corrector|
+              # Replace let(:foo) to before.
+              corrector.replace(let.loc.expression, 'before')
+            end
           end
         end
 
